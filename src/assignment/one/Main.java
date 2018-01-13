@@ -56,7 +56,7 @@ public class Main {
 
         // the Transaction.Output of tx at position 0 has a value of 10
         tx2.addInput(tx.getHash(), 0);
-        tx2.addInput(tx.getHash(), 1);
+        //tx2.addInput(tx.getHash(), 1);
 
 
         // I split the coin of value 10 into 3 coins and send all of them for simplicity to

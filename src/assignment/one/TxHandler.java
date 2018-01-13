@@ -1,11 +1,8 @@
-package assignment.one;
+//package assignment.one;
 
 import java.io.Console;
 import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class TxHandler {
@@ -161,6 +158,7 @@ public class TxHandler {
             if (!containsMultipleUTXOClaims)
                 transactionsWithValidUTXOClaims.add(transaction);
         }
+
 
         return transactionsWithValidUTXOClaims;
     }
