@@ -1,31 +1,42 @@
 package assignment.one;
 
-import java.io.Console;
 import java.security.PublicKey;
 import java.util.*;
-import java.util.stream.Stream;
 
-public class TxHandler {
+public class MaxFeeTxHandler {
 
     private UTXOPool utxoPool;
-    /**
-     * Creates a public ledger whose current UTXOPool (collection of unspent transaction outputs) is
-     * {@code utxoPool}. This should make a copy of utxoPool by using the UTXOPool(UTXOPool uPool)
-     * constructor.
-     */
-    public TxHandler(UTXOPool utxoPool) {
+
+    public MaxFeeTxHandler(UTXOPool utxoPool) {
         this.utxoPool = utxoPool;
     }
 
-    /**
-     * @return true if:
-     * (1) all outputs claimed by {@code tx} are in the current UTXO pool,
-     * (2) the signatures on each input of {@code tx} are valid,
-     * (3) no UTXO is claimed multiple times by {@code tx},
-     * (4) all of {@code tx}s output values are non-negative, and
-     * (5) the sum of {@code tx}s input values is greater than or equal to the sum of its output
-     *     values; and false otherwise.
-     */
+    public Transaction[] handleTxs(Transaction[] possibleTxs) {
+        if (possibleTxs == null) return new Transaction[0];
+
+        ArrayList<Transaction> validTransactions = new ArrayList<>();
+        for(Transaction transaction: possibleTxs){
+            if (isValidTx(transaction)){
+                // remove all inputs from unspent transaction outputs
+                for(Transaction.Input input : transaction.getInputs())
+                    this.utxoPool.removeUTXO(new UTXO(input.prevTxHash, input.outputIndex));
+
+                byte[] txHash = transaction.getHash();
+                // add inputs into unspent transaction outputs
+                for(int i = 0; i < transaction.getOutputs().size(); i++){
+                    UTXO utxo = new UTXO(txHash, i);
+                    utxoPool.addUTXO(utxo, transaction.getOutput(i));
+                }
+                validTransactions.add(transaction);
+            }
+        }
+
+        // TODO: find optimal fees rather than taking the greedy approach.
+        // Perhaps processing linked transactions yields a greater fee than individual transactions.
+
+        return sortTransactionsByFeesGreedy(validTransactions);
+    }
+
     public boolean isValidTx(Transaction tx) {
         if (tx == null) return false;
         boolean allClaimedOutputsInCurrentPool = areAllClaimedOutputsInCurrentPool(tx);
@@ -104,30 +115,56 @@ public class TxHandler {
         return inputSum >= outputSum;
     }
 
-    /**
-     * Handles each epoch by receiving an unordered array of proposed transactions, checking each
-     * transaction for correctness, returning a mutually valid array of accepted transactions, and
-     * updating the current UTXO pool as appropriate.
-     */
-    public Transaction[] handleTxs(Transaction[] possibleTxs) {
-        if (possibleTxs == null) return new Transaction[0];
 
-        ArrayList<Transaction> validTransactions = new ArrayList<>();
-        for(Transaction transaction: possibleTxs){
-            if (isValidTx(transaction)){
-                // remove all inputs from unspent transaction outputs
-                for(Transaction.Input input : transaction.getInputs())
-                    this.utxoPool.removeUTXO(new UTXO(input.prevTxHash, input.outputIndex));
-
-                byte[] txHash = transaction.getHash();
-                // add inputs into unspent transaction outputs
-                for(int i = 0; i < transaction.getOutputs().size(); i++){
-                    UTXO utxo = new UTXO(txHash, i);
-                    utxoPool.addUTXO(utxo, transaction.getOutput(i));
-                }
-                validTransactions.add(transaction);
-            }
+    public Transaction[] sortTransactionsByFeesGreedy(ArrayList<Transaction> transactions){
+        HashMap<Double, ArrayList<Transaction>> transactionFeeMap = new HashMap<>();
+        for(Transaction transaction : transactions){
+            double fees = getTransactionFees(transaction);
+            ArrayList<Transaction> txs = transactionFeeMap.getOrDefault(fees, new ArrayList<Transaction>());
+            txs.add(transaction);
+            transactionFeeMap.put(fees, txs);
         }
-        return validTransactions.toArray(new Transaction[validTransactions.size()]);
+        ArrayList<Transaction> sortedTransactions = new ArrayList<>();
+
+        transactionFeeMap.keySet().stream().sorted()
+                .forEach(
+                        f -> transactionFeeMap.get(f).forEach(tx -> sortedTransactions.add(tx))
+                );
+        return sortedTransactions.toArray(new Transaction[sortedTransactions.size()]);
+    }
+
+    public Transaction[] sortTransactionsByFeesOptimal(ArrayList<Transaction> transactions) throws Exception{
+        // Find transactions in the block that are connected to each other
+        // Add linked transactions into a bucket
+        // Decide if processing all linked transactions yields in greater fees
+        throw new Exception("Not Implemented");
+    }
+
+    public double getTransactionFees(Transaction tx){
+        ArrayList<UTXO> pUTXOs = utxoPool.getAllUTXO();
+        double inputSum = tx.getInputs().stream()
+                .filter(input -> pUTXOs.contains(new UTXO(input.prevTxHash, input.outputIndex)))
+                .map(input -> new UTXO(input.prevTxHash, input.outputIndex))
+                .mapToDouble(utxo -> utxoPool.getTxOutput(utxo).value).sum();
+        double outputSum = tx.getOutputs().stream().mapToDouble(o -> o.value).sum();
+        return inputSum - outputSum;
+    }
+
+    public Transaction getTransactionByHash(ArrayList<Transaction> transactions, byte[] hash){
+        for(Transaction tx: transactions){
+            if (tx.getHash() == hash) return tx;
+        }
+        return null;
+    }
+
+    public class TransactionSet{
+        public ArrayList<Transaction> transactions;
+        public double fees;
+        public double getFees(){
+            return fees;
+        }
+        public TransactionSet(){
+            this.transactions = new ArrayList<>();
+        }
     }
 }
