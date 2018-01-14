@@ -1,4 +1,4 @@
-package assignment.one;
+package assignment.three;
 
 import java.io.Console;
 import java.security.PublicKey;
@@ -17,7 +17,7 @@ public class TxHandler {
         this.utxoPool = utxoPool;
     }
 
-    public UTXOPool getUtxoPool() {
+    public UTXOPool getUTXOPool() {
         return utxoPool;
     }
 
