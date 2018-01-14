@@ -1,3 +1,5 @@
+package assignment.two;
+
 public class Candidate {
 	Transaction tx;
 	int sender;

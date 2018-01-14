@@ -1,3 +1,5 @@
+package assignment.two;
+
 final public class Transaction {
     final int id;
 

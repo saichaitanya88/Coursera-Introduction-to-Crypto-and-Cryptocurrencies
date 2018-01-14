@@ -1,3 +1,5 @@
+package assignment.two;
+
 // Example of a Simulation. This test runs the nodes on a random graph.
 // At the end, it will print out the Transaction ids which each node
 // believes consensus has been reached upon. You can use this simulation to
@@ -18,6 +20,8 @@ public class Simulation {
       // and numRounds (10, 20). You should try to test your CompliantNode
       // code for all 3x3x3x2 = 54 combinations.
 
+      args = new String[]{"0.1", "0.15", "0.01", "10"};
+
       int numNodes = 100;
       double p_graph = Double.parseDouble(args[0]); // parameter for random graph: prob. that an edge will exist
       double p_malicious = Double.parseDouble(args[1]); // prob. that a node will be set to be malicious
@@ -30,7 +34,7 @@ public class Simulation {
          if(Math.random() < p_malicious)
             // When you are ready to try testing with malicious nodes, replace the
             // instantiation below with an instantiation of a MaliciousNode
-            nodes[i] = new MalDoNothing(p_graph, p_malicious, p_txDistribution, numRounds);
+            nodes[i] = new MaliciousNode(p_graph, p_malicious, p_txDistribution, numRounds);
          else
             nodes[i] = new CompliantNode(p_graph, p_malicious, p_txDistribution, numRounds);
       }
